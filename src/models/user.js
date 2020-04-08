@@ -42,13 +42,17 @@ const userSchema = mongoose.Schema({
 
         }
     },
+    avatar : {
+        type : Buffer
+    },
     tokens : [{
         token: {
             type: String,
             required: true
         }
     }]
-},{
+},
+{
     timestamps:true
 })
 //Create virtual function to create relationship between user and task
