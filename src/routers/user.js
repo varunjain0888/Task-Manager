@@ -3,12 +3,13 @@ const router = new express.Router()
 const User = require('../models/user')
 const auth = require('../middleware/auth')
 const multer = require('multer')
-
+const sharp = require('sharp')
+const { sendWelcomeMail } = require('../emails/account')
 router.post('/users', async (req, res) =>{
     const user = new User(req.body)
-    try {
-       await user.save()
+    try {  
        const token = await user.genrateAuthToken()
+       sendWelcomeMail(user.email,user.name) 
        res.status(201).send({user,token})
     }catch(e) {
         res.status(400).send(e)
@@ -111,7 +112,8 @@ const upload = multer({
 })
 
 router.post('/users/me/avatar', auth, upload.single('avatar'),async (req,res)=>{
-    req.user.avatar = req.file.buffer
+    const buffer = await sharp(req.file.buffer).resize({width:250,height:250}).png().toBuffer()
+    req.user.avatar = buffer
     await req.user.save()
     res.send({code:200,message:'uploaded successfully'})
 },(error, req, res, next)=>{
@@ -130,7 +132,7 @@ router.get('/users/:id/avatar',async (req, res) => {
         if(!user | !user.avatar){
             return new Error('Image not found')
         }
-        res.set('Content-Type','image/jpg')
+        res.set('Content-Type','image/png')
         res.send(user.avatar)
     }catch(e){
         res.status(400).send(e)
